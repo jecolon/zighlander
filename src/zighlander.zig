@@ -38,8 +38,7 @@ pub fn Zighlander(comptime T: type) type {
 
         pub fn put(self: *Self) void {
             if (self.singleton) |*s| {
-                const prev_count = s.ref_count.decr();
-                if (prev_count == 1) self.deinit();
+                if (s.ref_count.decr() == 1) self.deinit();
             }
         }
 
