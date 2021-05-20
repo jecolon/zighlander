@@ -1,8 +1,11 @@
+//! Zighlander is a Zig implementation of the Singleton Pattern.
+
 const std = @import("std");
 const atomic = std.atomic;
 const mem = std.mem;
 const testing = std.testing;
 
+/// Create a new Zighlander to manage a singleton of type T.
 pub fn Zighlander(comptime T: type) type {
     return struct {
         const Self = @This();
@@ -15,6 +18,7 @@ pub fn Zighlander(comptime T: type) type {
         allocator: *mem.Allocator,
         singleton: ?Singleton,
 
+        /// Initialize the Zighlander, not the contained singleton.
         pub fn init(allocator: *mem.Allocator) Self {
             return Self{
                 .allocator = allocator,
@@ -22,6 +26,8 @@ pub fn Zighlander(comptime T: type) type {
             };
         }
 
+        /// get a reference to the singleton. Creates a new singleton if necessary, which must then
+        /// be initialized by the caller.
         pub fn get(self: *Self) !*T {
             if (self.singleton) |*s| {
                 _ = s.ref_count.incr();
@@ -36,18 +42,26 @@ pub fn Zighlander(comptime T: type) type {
             return self.singleton.?.instance;
         }
 
+        /// put decrements the reference counter, de-initializing and destroying the singleton if it
+        /// reaches zero.
         pub fn put(self: *Self) void {
             if (self.singleton) |*s| {
                 if (s.ref_count.decr() == 1) self.deinit();
             }
         }
 
+        /// deinit and destroy the singleton, unconditionally, regardless of reference count.
         pub fn deinit(self: *Self) void {
             if (self.singleton) |*s| {
                 s.instance.deinit();
                 self.allocator.destroy(s.instance);
                 self.singleton = null;
             }
+        }
+
+        /// isNull checks if the singleton is there.
+        pub fn isNull(self: Self) bool {
+            return self.singleton == null;
         }
     };
 }
@@ -83,6 +97,9 @@ test "Zighlander" {
     // The put method decremets the reference counter by 1; when it reaches 0, the singleton instance
     // will be de-initialized and destroyed.
     defer only_one.put();
+
+    // You can check if references are still valid with the isNull methodd.
+    testing.expect(!only_one.isNull());
 
     // Modifications on reference 'one' are visible through reference 'two'.
     testing.expect(two.items.len == 3);

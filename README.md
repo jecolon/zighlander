@@ -77,9 +77,13 @@ test "Zighlander" {
     // Grab another reference to the singleton instance.
     var two = try only_one.get();
 
-    // The put method decremets the reference counter by 1; when it reaches 0, the singleton instance
-    // will be de-initialized and destroyed.
+    // The put method decremets the reference counter. This does not actually invalidate any active 
+    // references, unless the counter reaches 0, at which point the singleton will be de-initialized 
+    // and destroyed. 
     defer only_one.put();
+
+    // You can check if references are still valid with the isNull methodd.
+    testing.expect(!only_one.isNull());
 
     // Modifications on reference 'one' are visible through reference 'two'.
     testing.expect(two.items.len == 3);
