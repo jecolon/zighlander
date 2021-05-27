@@ -99,8 +99,8 @@ test "Zighlander" {
     defer only_one.put();
 
     // You can check if references are still valid with the isNull methodd.
-    testing.expect(!only_one.isNull());
+    try testing.expect(!only_one.isNull());
 
     // Modifications on reference 'one' are visible through reference 'two'.
-    testing.expect(two.items.len == 3);
+    try testing.expect(two.items.len == 3);
 }
