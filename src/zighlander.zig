@@ -50,10 +50,9 @@ pub fn Zighlander(comptime T: type) type {
             }
         }
 
-        /// deinit and destroy the singleton, unconditionally, regardless of reference count.
+        /// destroy the singleton, unconditionally, regardless of reference count.
         pub fn deinit(self: *Self) void {
             if (self.singleton) |*s| {
-                s.instance.deinit();
                 self.allocator.destroy(s.instance);
                 self.singleton = null;
             }
@@ -72,10 +71,10 @@ test "Zighlander" {
     // Create the unique Zighlander to manage the singleton.
     var only_one = Zighlander(std.ArrayList(u8)).init(allocator);
 
-    // This deinit on the Zighlander itself will deinit and destroy the singleton no matter how
-    // many references are still active. If you don't want this behavior, omit this defer call and
-    // manage the references with the get and put methods as shown below. Even if you manage the
-    // references with get and put, you can still make this defer to ensure clean up at program end.
+    // This deinit on the Zighlander itself will destroy the singleton no matter how many references
+    // are still active. If you don't want this behavior, omit this defer call and manage the references
+    // with the get and put methods as shown below. Even if you manage the references with get and
+    // put, you can still make this defer to ensure clean up on program exit.
     defer only_one.deinit();
 
     // Call get to retrieve a reference to the singleton instance.
@@ -84,6 +83,9 @@ test "Zighlander" {
     // NOTE! The first time you get a reference, you must initialize it because it's just a pointer
     // to garbage memory. Failure to do this will result in either crashes or undefined behavior.
     one.* = std.ArrayList(u8).init(allocator);
+
+    // Likewise, make sure to deinit your data if necessary when you're done with it.
+    defer one.deinit();
 
     // Changes made to the singleton will be seen by all references to it. NOTE! The reference counting
     // is thread-safe thanks to atomics, but the singleton instance itself is NOT thread-safe.
