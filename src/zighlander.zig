@@ -12,7 +12,7 @@ pub fn Zighlander(comptime T: type) type {
 
         const Singleton = struct {
             instance: *T,
-            ref_count: atomic.Int(usize),
+            ref_count: atomic.Atomic(usize),
         };
 
         allocator: *mem.Allocator,
@@ -30,13 +30,13 @@ pub fn Zighlander(comptime T: type) type {
         /// be initialized by the caller.
         pub fn get(self: *Self) !*T {
             if (self.singleton) |*s| {
-                _ = s.ref_count.incr();
+                _ = s.ref_count.fetchAdd(1, .SeqCst);
                 return s.instance;
             }
 
             self.singleton = Singleton{
                 .instance = try self.allocator.create(T),
-                .ref_count = atomic.Int(usize).init(1),
+                .ref_count = atomic.Atomic(usize).init(1),
             };
 
             return self.singleton.?.instance;
@@ -46,7 +46,7 @@ pub fn Zighlander(comptime T: type) type {
         /// reaches zero.
         pub fn put(self: *Self) void {
             if (self.singleton) |*s| {
-                if (s.ref_count.decr() == 1) self.deinit();
+                if (s.ref_count.fetchSub(1, .SeqCst) == 1) self.deinit();
             }
         }
 
